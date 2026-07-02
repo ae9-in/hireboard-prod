@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (local overrides and secrets — never commit these)
 .env
+.env.example
 .env*.local
 
 # vercel
