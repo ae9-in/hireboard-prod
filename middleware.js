@@ -32,18 +32,85 @@ function parseJwt(token) {
   }
 }
 
-export function middleware(request) {
+/**
+ * Verify HMAC-SHA256 signature of the JWT token inside Next.js Edge runtime.
+ */
+async function verifyJwtSignature(token, secret) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+    
+    const [headerB64, payloadB64, signatureB64] = parts;
+    
+    const encoder = new TextEncoder();
+    const secretKeyData = encoder.encode(secret);
+    
+    const key = await crypto.subtle.importKey(
+      'raw',
+      secretKeyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+    
+    const signature = base64UrlDecode(signatureB64);
+    const data = encoder.encode(`${headerB64}.${payloadB64}`);
+    return await crypto.subtle.verify('HMAC', key, signature, data);
+  } catch (err) {
+    return false;
+  }
+}
+
+function base64UrlDecode(str) {
+  const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const buffer = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) {
+    buffer[i] = raw.charCodeAt(i);
+  }
+  return buffer;
+}
+
+export async function middleware(request) {
   const { pathname } = request.nextUrl;
   
   // Extract token cookie
   const token = request.cookies.get('token')?.value;
-  const user = token ? parseJwt(token) : null;
+  
+  // Verify token signature if present
+  let user = null;
+  let isTokenValid = false;
+  if (token) {
+    const JWT_SECRET = process.env.JWT_SECRET || 'fallback-super-secret-key-change-in-prod';
+    isTokenValid = await verifyJwtSignature(token, JWT_SECRET);
+    if (isTokenValid) {
+      user = parseJwt(token);
+    }
+  }
   
   // Define route classifications
   const isSeekerRoute = pathname.startsWith('/dashboard');
   const isEmployerRoute = pathname.startsWith('/employer');
   const isAdminRoute = pathname.startsWith('/admin');
   const isAuthRoute = pathname === '/login' || pathname === '/register';
+
+  // If token is present but signature is invalid, clear the cookie to prevent infinite redirect loops
+  if (token && !isTokenValid) {
+    if (isAuthRoute || pathname === '/admin/login') {
+      const response = NextResponse.next();
+      response.cookies.delete('token');
+      return response;
+    }
+
+    const loginUrl = pathname.startsWith('/admin')
+      ? new URL('/admin/login', request.url)
+      : new URL('/login', request.url);
+    
+    loginUrl.searchParams.set('callbackUrl', pathname);
+    const response = NextResponse.redirect(loginUrl);
+    response.cookies.delete('token');
+    return response;
+  }
 
   // 1. Guard Seeker Routes (/dashboard)
   if (isSeekerRoute) {
