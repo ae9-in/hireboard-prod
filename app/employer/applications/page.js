@@ -49,21 +49,7 @@ export default async function EmployerApplicationsPage({ searchParams }) {
       .lean();
 
     // Serialize MongoDB records
-    applications = apps.map(app => ({
-      ...app,
-      _id: app._id.toString(),
-      applicant: app.applicant ? {
-        ...app.applicant,
-        _id: app.applicant._id.toString()
-      } : null,
-      company: app.company.toString(),
-      createdAt: app.createdAt ? app.createdAt.toISOString() : null,
-      updatedAt: app.updatedAt ? app.updatedAt.toISOString() : null,
-      job: app.job ? {
-        ...app.job,
-        _id: app.job._id.toString()
-      } : null
-    }));
+    applications = JSON.parse(JSON.stringify(apps));
 
   } catch (error) {
     console.error('Error loading recruiter applications page:', error);

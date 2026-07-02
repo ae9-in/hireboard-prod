@@ -25,10 +25,7 @@ export default async function SeekerProfilePage() {
     if (!userRec) redirect('/login');
     
     // Serialize object id for component safety
-    user = {
-      ...userRec,
-      _id: userRec._id.toString(),
-    };
+    user = JSON.parse(JSON.stringify(userRec));
   } catch (error) {
     console.error('Error loading seeker profile page:', error);
     redirect('/login');

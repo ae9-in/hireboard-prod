@@ -29,13 +29,7 @@ export default async function CompanyProfilePage() {
       const companyRec = await Company.findById(user.employerProfile.company).lean();
       if (companyRec) {
         // Serialize object IDs
-        companyObj = {
-          ...companyRec,
-          _id: companyRec._id.toString(),
-          owner: companyRec.owner.toString(),
-          createdAt: companyRec.createdAt ? companyRec.createdAt.toISOString() : null,
-          updatedAt: companyRec.updatedAt ? companyRec.updatedAt.toISOString() : null,
-        };
+        companyObj = JSON.parse(JSON.stringify(companyRec));
       }
     }
   } catch (error) {

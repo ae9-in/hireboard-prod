@@ -48,41 +48,7 @@ export default async function ApplicationDetailPage({ params }) {
     }
 
     // Serialize MongoDB records
-    appObj = {
-      ...app,
-      _id: app._id.toString(),
-      company: app.company.toString(),
-      createdAt: app.createdAt ? app.createdAt.toISOString() : null,
-      updatedAt: app.updatedAt ? app.updatedAt.toISOString() : null,
-      withdrawnAt: app.withdrawnAt ? app.withdrawnAt.toISOString() : null,
-      job: app.job ? {
-        ...app.job,
-        _id: app.job._id.toString()
-      } : null,
-      applicant: app.applicant ? {
-        ...app.applicant,
-        _id: app.applicant._id.toString(),
-        createdAt: app.applicant.createdAt ? app.applicant.createdAt.toISOString() : null,
-        seekerProfile: app.applicant.seekerProfile ? {
-          ...app.applicant.seekerProfile,
-          experience_detail: app.applicant.seekerProfile.experience_detail ? app.applicant.seekerProfile.experience_detail.map(e => ({
-            ...e,
-            _id: e._id ? e._id.toString() : null,
-            startDate: e.startDate ? e.startDate.toISOString() : null,
-            endDate: e.endDate ? e.endDate.toISOString() : null,
-          })) : []
-        } : null
-      } : null,
-      answers: app.answers ? app.answers.map(ans => ({
-        ...ans,
-        _id: ans._id ? ans._id.toString() : null
-      })) : [],
-      statusHistory: app.statusHistory ? app.statusHistory.map(h => ({
-        ...h,
-        _id: h._id ? h._id.toString() : null,
-        changedAt: h.changedAt ? h.changedAt.toISOString() : null
-      })) : []
-    };
+    appObj = JSON.parse(JSON.stringify(app));
 
   } catch (error) {
     console.error('Error fetching application detail:', error);

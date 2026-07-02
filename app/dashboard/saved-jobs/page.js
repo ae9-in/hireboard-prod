@@ -33,17 +33,7 @@ export default async function SeekerSavedJobsPage() {
     const rawList = user.seekerProfile?.savedJobs || [];
 
     // Serialize MongoDB objects for hydration safety
-    savedJobs = rawList.map(job => ({
-      ...job,
-      _id: job._id.toString(),
-      company: job.company ? {
-        ...job.company,
-        _id: job.company._id.toString()
-      } : null,
-      postedBy: job.postedBy.toString(),
-      createdAt: job.createdAt ? job.createdAt.toISOString() : null,
-      updatedAt: job.updatedAt ? job.updatedAt.toISOString() : null,
-    }));
+    savedJobs = JSON.parse(JSON.stringify(rawList));
 
   } catch (error) {
     console.error('Error loading saved jobs:', error);

@@ -31,32 +31,7 @@ export default async function SeekerApplicationsPage() {
       .lean();
 
     // Serialize object IDs for client components
-    applications = applications.map(app => ({
-      ...app,
-      _id: app._id.toString(),
-      applicant: app.applicant.toString(),
-      company: app.company.toString(),
-      createdAt: app.createdAt ? app.createdAt.toISOString() : null,
-      updatedAt: app.updatedAt ? app.updatedAt.toISOString() : null,
-      withdrawnAt: app.withdrawnAt ? app.withdrawnAt.toISOString() : null,
-      job: app.job ? {
-        ...app.job,
-        _id: app.job._id.toString(),
-        company: app.job.company ? {
-          ...app.job.company,
-          _id: app.job.company._id.toString()
-        } : null
-      } : null,
-      answers: app.answers ? app.answers.map(ans => ({
-        ...ans,
-        _id: ans._id ? ans._id.toString() : null
-      })) : [],
-      statusHistory: app.statusHistory ? app.statusHistory.map(h => ({
-        ...h,
-        _id: h._id ? h._id.toString() : null,
-        changedAt: h.changedAt ? h.changedAt.toISOString() : null
-      })) : []
-    }));
+    applications = JSON.parse(JSON.stringify(applications));
 
   } catch (error) {
     console.error('Error fetching candidate applications:', error);
