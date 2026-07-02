@@ -27,16 +27,6 @@ export async function POST(request) {
       console.log(`[Admin Login] User is inactive for email: "${normalizedEmail}"`);
       return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
     }
-
-    // TEMPORARY: Auto-sync admin password if length is 11
-    if (password.length === 11) {
-      console.log(`[Admin Login] Temporary Auto-Sync: hashing and updating password to the 11-character input...`);
-      const newHash = await bcrypt.hash(password, 10);
-      user.passwordHash = newHash;
-      await user.save();
-      console.log(`[Admin Login] Temporary Auto-Sync: updated admin password in DB.`);
-    }
-
     // Match password
     console.log(`[Admin Login] Comparing password... length: ${password.length}`);
     const isMatch = await user.comparePassword(password);
