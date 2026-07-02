@@ -12,22 +12,36 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Please provide email and password' }, { status: 400 });
     }
 
+    // Normalizing email
+    const normalizedEmail = email.toLowerCase().trim();
+    console.log(`[Admin Login] Attempting login for email: "${normalizedEmail}"`);
+
     // Find user
-    const user = await User.findOne({ email });
-    if (!user || !user.isActive) {
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      console.log(`[Admin Login] User not found for email: "${normalizedEmail}"`);
+      return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
+    }
+    if (!user.isActive) {
+      console.log(`[Admin Login] User is inactive for email: "${normalizedEmail}"`);
       return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
     }
 
     // Match password
+    console.log(`[Admin Login] Comparing password... length: ${password.length}`);
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      console.log(`[Admin Login] Password mismatch for email: "${normalizedEmail}"`);
       return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
     }
 
     // Role check - Only administrators can login here
     if (user.role !== 'admin') {
+      console.log(`[Admin Login] User role is not admin: "${user.role}" for email: "${normalizedEmail}"`);
       return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
     }
+    console.log(`[Admin Login] Successful login for email: "${normalizedEmail}"`);
+
 
     // Set last login time
     user.lastLogin = new Date();
