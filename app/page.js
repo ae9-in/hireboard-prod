@@ -1,65 +1,108 @@
-import Image from "next/image";
+import React from 'react';
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
+import HeroSection from '@/components/home/HeroSection';
+import CategoryGrid from '@/components/home/CategoryGrid';
+import FeaturedJobs from '@/components/home/FeaturedJobs';
+import StatsBanner from '@/components/home/StatsBanner';
+import HowItWorksSection from '@/components/home/HowItWorksSection';
+import TestimonialsSection from '@/components/home/TestimonialsSection';
+import NewsletterSection from '@/components/home/NewsletterSection';
 
-export default function Home() {
+import connectDB from '@/lib/db';
+import Job from '@/models/Job.model';
+import Company from '@/models/Company.model';
+
+// Revalidate this page every hour (3600 seconds) for fresh listings and stats
+export const revalidate = 3600;
+
+export default async function HomePage() {
+  let featuredJobs = [];
+  let topCompanies = [];
+  let categoryCounts = {};
+  let activeJobsCount = 0;
+  let companiesCount = 0;
+
+  try {
+    await connectDB();
+
+    // 1. Fetch featured active jobs
+    featuredJobs = await Job.find({ status: 'active', isFeatured: true })
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .populate('company', 'name logo slug isVerified')
+      .lean();
+
+    // Serialize object ids for client component consumption
+    featuredJobs = featuredJobs.map(job => ({
+      ...job,
+      _id: job._id.toString(),
+      company: job.company ? {
+        ...job.company,
+        _id: job.company._id.toString()
+      } : null,
+      postedBy: job.postedBy.toString(),
+      createdAt: job.createdAt ? job.createdAt.toISOString() : null,
+      updatedAt: job.updatedAt ? job.updatedAt.toISOString() : null,
+    }));
+
+    // 2. Fetch active companies
+    topCompanies = await Company.find({})
+      .sort({ activeJobCount: -1, rating: -1 })
+      .limit(6)
+      .lean();
+
+    topCompanies = topCompanies.map(comp => ({
+      ...comp,
+      _id: comp._id.toString(),
+      owner: comp.owner ? comp.owner.toString() : null,
+      createdAt: comp.createdAt ? comp.createdAt.toISOString() : null,
+      updatedAt: comp.updatedAt ? comp.updatedAt.toISOString() : null,
+    }));
+
+    // 3. Aggregate active job counts per category
+    const aggregates = await Job.aggregate([
+      { $match: { status: 'active' } },
+      { $group: { _id: '$category', count: { $sum: 1 } } }
+    ]);
+
+    aggregates.forEach(agg => {
+      if (agg._id) {
+        categoryCounts[agg._id] = agg.count;
+      }
+    });
+
+    // 4. Fetch platform counts for stats banner
+    const [jobsCount, compsCount] = await Promise.all([
+      Job.countDocuments({ status: 'active' }),
+      Company.countDocuments({})
+    ]);
+    activeJobsCount = jobsCount;
+    companiesCount = compsCount;
+
+  } catch (error) {
+    console.error('Error fetching homepage database data:', error);
+    // Fallback to empty states if database connection fails or is not yet seeded
+    featuredJobs = [];
+    topCompanies = [];
+    categoryCounts = {};
+    activeJobsCount = 0;
+    companiesCount = 0;
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <>
+      <Navbar />
+      <main className="flex-1">
+        <HeroSection />
+        <CategoryGrid counts={categoryCounts} />
+        <FeaturedJobs jobs={featuredJobs} />
+        <StatsBanner activeJobsCount={activeJobsCount} companiesCount={companiesCount} />
+        <HowItWorksSection />
+        <TestimonialsSection />
+        <NewsletterSection />
       </main>
-    </div>
+      <Footer />
+    </>
   );
 }
