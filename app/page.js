@@ -34,17 +34,7 @@ export default async function HomePage() {
       .lean();
 
     // Serialize object ids for client component consumption
-    featuredJobs = featuredJobs.map(job => ({
-      ...job,
-      _id: job._id.toString(),
-      company: job.company ? {
-        ...job.company,
-        _id: job.company._id.toString()
-      } : null,
-      postedBy: job.postedBy.toString(),
-      createdAt: job.createdAt ? job.createdAt.toISOString() : null,
-      updatedAt: job.updatedAt ? job.updatedAt.toISOString() : null,
-    }));
+    featuredJobs = JSON.parse(JSON.stringify(featuredJobs));
 
     // 2. Fetch active companies
     topCompanies = await Company.find({})

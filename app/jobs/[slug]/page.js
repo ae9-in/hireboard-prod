@@ -97,21 +97,7 @@ export default async function JobPage({ params }) {
   }
 
   // Serialize job fields for hydration safety
-  const serializedJob = {
-    ...job,
-    _id: job._id.toString(),
-    company: job.company ? {
-      ...job.company,
-      _id: job.company._id.toString(),
-      owner: job.company.owner ? job.company.owner.toString() : null,
-      createdAt: job.company.createdAt ? job.company.createdAt.toISOString() : null,
-      updatedAt: job.company.updatedAt ? job.company.updatedAt.toISOString() : null,
-    } : null,
-    postedBy: job.postedBy.toString(),
-    createdAt: job.createdAt ? job.createdAt.toISOString() : null,
-    updatedAt: job.updatedAt ? job.updatedAt.toISOString() : null,
-    applicationDeadline: job.applicationDeadline ? job.applicationDeadline.toISOString() : null,
-  };
+  const serializedJob = JSON.parse(JSON.stringify(job));
 
   let currentUser = null;
   let isSaved = false;
@@ -126,11 +112,7 @@ export default async function JobPage({ params }) {
       if (decoded && decoded.id) {
         const userRec = await User.findById(decoded.id).select('name email role seekerProfile').lean();
         if (userRec) {
-          currentUser = {
-            ...userRec,
-            _id: userRec._id.toString(),
-            createdAt: userRec.createdAt ? userRec.createdAt.toISOString() : null,
-          };
+          currentUser = JSON.parse(JSON.stringify(userRec));
           
           // Check saved status
           if (userRec.seekerProfile?.savedJobs) {

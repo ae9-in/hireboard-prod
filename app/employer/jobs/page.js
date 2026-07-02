@@ -38,15 +38,7 @@ export default async function EmployerJobsPage() {
       .lean();
 
     // Serialize object IDs
-    jobs = queryResult.map(job => ({
-      ...job,
-      _id: job._id.toString(),
-      company: job.company.toString(),
-      postedBy: job.postedBy.toString(),
-      createdAt: job.createdAt ? job.createdAt.toISOString() : null,
-      updatedAt: job.updatedAt ? job.updatedAt.toISOString() : null,
-      applicationDeadline: job.applicationDeadline ? job.applicationDeadline.toISOString() : null,
-    }));
+    jobs = JSON.parse(JSON.stringify(queryResult));
 
   } catch (error) {
     console.error('Error loading employer jobs page:', error);

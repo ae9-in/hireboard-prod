@@ -86,17 +86,7 @@ export default async function IntersectionPage({ params }) {
       .populate('company', 'name logo slug isVerified industry size')
       .lean();
 
-    jobs = queryResult.map(job => ({
-      ...job,
-      _id: job._id.toString(),
-      company: job.company ? {
-        ...job.company,
-        _id: job.company._id.toString()
-      } : null,
-      postedBy: job.postedBy.toString(),
-      createdAt: job.createdAt ? job.createdAt.toISOString() : null,
-      updatedAt: job.updatedAt ? job.updatedAt.toISOString() : null,
-    }));
+    jobs = JSON.parse(JSON.stringify(queryResult));
 
   } catch (error) {
     console.error('Error loading intersection page:', error);

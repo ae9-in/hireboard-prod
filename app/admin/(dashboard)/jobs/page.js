@@ -30,17 +30,7 @@ export default async function AdminJobsPage() {
       .lean();
 
     // Serialize object IDs
-    pendingJobs = queryResult.map(job => ({
-      ...job,
-      _id: job._id.toString(),
-      company: job.company ? {
-        ...job.company,
-        _id: job.company._id.toString()
-      } : null,
-      postedBy: job.postedBy.toString(),
-      createdAt: job.createdAt ? job.createdAt.toISOString() : null,
-      updatedAt: job.updatedAt ? job.updatedAt.toISOString() : null,
-    }));
+    pendingJobs = JSON.parse(JSON.stringify(queryResult));
 
   } catch (error) {
     console.error('Error loading admin pending review jobs:', error);
